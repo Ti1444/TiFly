@@ -1,0 +1,54 @@
+local Players = game:GetService("Players")
+local UIS = game:GetService("UserInputService")
+local RS = game:GetService("RunService")
+
+local player = Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoid = character:WaitForChild("Humanoid")
+local torso = character:WaitForChild("HumanoidRootPart")
+
+local FLY_SPEED = 50
+local flying = false
+local input = Vector3.new()
+
+-- Управление
+UIS.InputBegan:Connect(function(inputObj)
+    if inputObj.KeyCode == Enum.KeyCode.F then
+        flying = not flying
+        humanoid:ChangeState(flying and Enum.HumanoidStateType.Flying or Enum.HumanoidStateType.Running)
+    end
+
+    if flying then
+        local key = inputObj.KeyCode
+        if key == Enum.KeyCode.Space then
+            input = input + Vector3.new(0, 1, 0)
+        elseif key == Enum.KeyCode.LeftShift then
+            input = input + Vector3.new(0, -1, 0)
+        elseif key == Enum.KeyCode.W then
+            input = input + Vector3.new(0, 0, -1)
+        elseif key == Enum.KeyCode.S then
+            input = input + Vector3.new(0, 0, 1)
+        elseif key == Enum.KeyCode.A then
+            input = input + Vector3.new(-1, 0, 0)
+        elseif key == Enum.KeyCode.D then
+            input = input + Vector3.new(1, 0, 0)
+        end
+    end
+end)
+
+UIS.InputEnded:Connect(function(inputObj)
+    if flying then
+        local key = inputObj.KeyCode
+        if key == Enum.KeyCode.Space or key == Enum.KeyCode.LeftShift then
+            input = Vector3.new(input.X, 0, input.Z)
+        else
+            input = Vector3.new(0, input.Y, 0)
+        end
+    end
+end)
+
+RS.Heartbeat:Connect(function()
+    if flying and torso then
+        torso.Velocity = input * FLY_SPEED
+    end
+end)
