@@ -1,23 +1,68 @@
 local Players = game:GetService("Players")
 local UIS = game:GetService("UserInputService")
 local RS = game:GetService("RunService")
+local CoreGui = game:GetService("CoreGui")
 
 local player = Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
 local humanoid = character:WaitForChild("Humanoid")
 local torso = character:WaitForChild("HumanoidRootPart")
 
+local ScreenGui = Instance.new("ScreenGui", CoreGui)
+local DragButton = Instance.new("TextButton")
+
+DragButton.Name = "FlyButton"
+DragButton.Size = UDim2.new(0, 100, 0, 40)
+DragButton.Position = UDim2.new(0.5, -50, 0.1, 0)
+DragButton.Text = "FLY: OFF"
+DragButton.BackgroundColor3 = Color3.new(0.3, 0.3, 0.3)
+DragButton.TextColor3 = Color3.new(1, 1, 1)
+DragButton.Parent = ScreenGui
+
+local dragging = false
+local dragInput, dragStart, startPos
+
+DragButton.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStart = input.Position
+        startPos = DragButton.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+
+DragButton.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement then
+        dragInput = input
+    end
+end)
+
+UIS.InputChanged:Connect(function(input)
+    if dragging and input == dragInput then
+        local delta = input.Position - dragStart
+        DragButton.Position = startPos + UDim2.new(0, delta.X, 0, delta.Y)
+    end
+end)
+
+
 local FLY_SPEED = 50
 local flying = false
 local input = Vector3.new()
 
--- Управление
-UIS.InputBegan:Connect(function(inputObj)
-    if inputObj.KeyCode == Enum.KeyCode.F then
-        flying = not flying
-        humanoid:ChangeState(flying and Enum.HumanoidStateType.Flying or Enum.HumanoidStateType.Running)
-    end
+local function ToggleFly()
+    flying = not flying
+    DragButton.Text = "FLY: " .. (flying and "ON" or "OFF")
+    DragButton.BackgroundColor3 = flying and Color3.new(0, 0.5, 0) or Color3.new(0.3, 0.3, 0.3)
+    humanoid:ChangeState(flying and Enum.HumanoidStateType.Flying or Enum.HumanoidStateType.Running)
+end
 
+DragButton.Activated:Connect(ToggleFly)
+
+UIS.InputBegan:Connect(function(inputObj)
     if flying then
         local key = inputObj.KeyCode
         if key == Enum.KeyCode.Space then
